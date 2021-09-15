@@ -3,21 +3,24 @@ let todoList = document.querySelector('.todo__list');
 let form = document.querySelector('.form');
 let formInput = document.querySelector('.form__input');
 let list = document.querySelector('.todo__list');
-window.onload = getTodos(todoList);
+window.onload = render(getTodos, list);
 
 
-async function getTodos(inElem) {
+async function getTodos() {
     let todosResponse = await fetch('http://localhost:3000/todos');
     let todosArr = await todosResponse.json();
-    inElem.innerHTML = todosArr.map(item => {
+    return todosArr;
+};
+async function render(getRequest, inElem) {
+    let arrTodos = await getRequest();
+    inElem.innerHTML = arrTodos.map(item => {
         if (item.completed === false) {
             return `<li class="todo__list-item" data-id="${item.id}" data-status="${item.completed}">${item.title}<div class="cancel"></div></li>`
         } else {
             return `<li class="todo__list-item active" data-id="${item.id}" data-status="${item.completed}">${item.title}<div class="cancel"></div></li>`
         }
     }).join('');
-};
-
+}
 function valueInObj(elem) {
     return {
         'title': elem.value,
@@ -25,7 +28,7 @@ function valueInObj(elem) {
     }
 };
 
-function getStatus(elemStatus, elemText) {
+function todoChanging(elemStatus, elemText) {
     if (elemStatus === 'true') {
         return {
             'title': elemText,
@@ -39,7 +42,7 @@ function getStatus(elemStatus, elemText) {
     };
 }
 
-async function setTodo(value, inElem) {
+async function createTodo(value, inElem) {
     let todoResponse = await fetch('http://localhost:3000/todos', {
         method: 'POST',
         headers: {
@@ -48,12 +51,8 @@ async function setTodo(value, inElem) {
         body: JSON.stringify(valueInObj(value))
     });
     let getTodo = await todoResponse.json();
-    let li = document.createElement('li');
-    li.classList.add('todo__list-item');
-    li.setAttribute('data-id', `${getTodo.id}`);
-    li.setAttribute('data-status', `${getTodo.completed}`);
-    li.innerHTML = `${getTodo.title}<div class="cancel"></div>`;
-    inElem.append(li);
+    let li = `<li class="todo__list-item active" data-id="${getTodo.id}" data-status="${getTodo.completed}">${getTodo.title}<div class="cancel"></div></li>`;
+    inElem.innerHTML += li;
 };
 
 async function changeStatus(id, status, text) {
@@ -62,7 +61,7 @@ async function changeStatus(id, status, text) {
         headers: {
             'Content-type': 'application/json;charset=utf-8'
         },
-        body: JSON.stringify(getStatus(status, text))
+        body: JSON.stringify(todoChanging(status, text))
     });
 };
 
@@ -74,7 +73,7 @@ async function deleteItem(id) {
 
 form.addEventListener('submit', event => {
     event.preventDefault();
-    setTodo(formInput, todoList);
+    createTodo(formInput, todoList);
     form.reset();
 });
 
